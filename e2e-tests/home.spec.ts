@@ -18,6 +18,54 @@ test.describe('Open roles listing', () => {
         await expect(page.getByTestId('role-card')).toHaveCount(expectedRoleCount);
     });
 
+    test('filters roles by department', async ({ page }) => {
+        await page.goto('/');
+
+        await page.getByTestId('department-filter').selectOption({ label: 'Technology' });
+
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+        await expect(visibleCards).toHaveCount(2);
+        await expect(visibleCards.getByTestId('role-department')).toHaveText([
+            'Technology',
+            'Technology',
+        ]);
+    });
+
+    test('filters roles by location', async ({ page }) => {
+        await page.goto('/');
+
+        await page.getByTestId('location-filter').selectOption({
+            label: 'London, United Kingdom',
+        });
+
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+        await expect(visibleCards).toHaveCount(1);
+        await expect(visibleCards.getByTestId('role-title')).toHaveText('Regional Sales Manager');
+    });
+
+    test('combines filters, shows no matches, and resets to all roles', async ({ page }) => {
+        await page.goto('/');
+        const visibleCards = page.locator('[data-testid="role-card"]:visible');
+
+        await page.getByTestId('department-filter').selectOption({ label: 'Technology' });
+        await expect(visibleCards).toHaveCount(2);
+        await page.getByTestId('location-filter').selectOption({
+            label: 'London, United Kingdom',
+        });
+
+        await expect(page.getByTestId('roles-grid')).toBeHidden();
+        await expect(page.getByTestId('filter-empty-state')).toBeVisible();
+        await expect(visibleCards).toHaveCount(0);
+
+        await page.getByTestId('role-filter-reset').click();
+
+        await expect(page.getByTestId('department-filter')).toHaveValue('');
+        await expect(page.getByTestId('location-filter')).toHaveValue('');
+        await expect(page.getByTestId('filter-empty-state')).toBeHidden();
+        await expect(page.getByTestId('roles-grid')).toBeVisible();
+        await expect(visibleCards).toHaveCount(expectedRoleCount);
+    });
+
     test('links through to a role detail page', async ({ page }) => {
         await page.goto('/');
         const firstCard = page.getByTestId('role-card').first();
